@@ -1,0 +1,115 @@
+library(factoextra)
+library(ggplot2)
+library(dplyr)
+library(plotly)
+
+library(stats)
+
+Data2 <- Input_PCA
+
+Data2<-Data[6:13] 
+
+groups<- c("Sham","Sham","Sham","Sham","Stroke","Stroke","Stroke","Stroke")
+
+dim(Data2) 
+
+Data2<-as.data.frame(t(Data2)) 
+
+colnames(Data2)<-t(accession) 
+Data2$groups<-groups     
+
+dim(Data2)                   
+
+
+library(dplyr)
+
+Data3<-Data2 %>%
+  select_if(~ !any(is.na(.)))
+dim(Data3)                  
+res.pca2 <- prcomp(Data3[,1:1756], scale = TRUE) #Here enter all protein containing columns (don't forget to exclude the last one which is with the group names)
+
+fviz_eig(res.pca2)          
+
+fviz_pca_ind(res.pca2,
+             geom = c("point"),       
+             col.ind = Data3[,1757] , # color by groups
+             habillage = Data3[,1757],
+             palette = "d3",
+             ggtheme = theme_gray(),
+             addEllipses = TRUE,     # Concentration ellipses
+             ellipse.level=0.70,
+             legend.title = "Groups",
+             pointshape = 19,
+             pointsize = 2,
+             repel = TRUE)
+
+fviz_ellipses(res.pca2,
+  axes = c(1,2),
+  habillage = Data3[,1757],
+  addEllipses = TRUE,
+  palette = "d3",
+  pointsize = 2,
+  geom = c("point", "text"),
+  ggtheme = theme_bw(),
+  legend.title = "Groups",
+  repel = TRUE)
+
+fviz_pca_ind(res.pca2, geom=c("point"),  pointsize = 2, 
+             habillage=Data2$groups, addEllipses=TRUE, ellipse.level=0.99,ellipse.type = "confidence",
+             palette = c("blue3", "red2"), , invisible="quali", repel = TRUE, pointshape = 19)
+
+fviz_pca_biplot(res.pca2,
+             col.var = "contrib",   # Color by contributions to the PC
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             select.var = list(cos2=0.7),
+             
+             repel = TRUE     # Avoid text overlapping
+             )
+
+fviz_pca_var(res.pca2,
+             col.var = "contrib", # Color by contributions to the PC
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = FALSE,     # Avoid text overlapping
+             select.var =
+             )
+
+prin_comp <- prcomp(Data3[,1:1756], rank. = 3)
+
+
+components <- prin_comp[["x"]]
+
+components <- data.frame(components)
+
+components$PC2 <- -components$PC2
+
+components$PC3 <- -components$PC3
+
+components = cbind(components, Data2$groups)
+
+
+tot_explained_variance_ratio <- summary(prin_comp)[["importance"]]['Proportion of Variance',]
+
+tot_explained_variance_ratio <- 100 * sum(tot_explained_variance_ratio)
+
+
+tit = 'Total Explained Variance = 100'
+
+
+fig <- plot_ly(components, x = ~PC1, y = ~PC2, color = ~Data2$groups, colors = c('#636EFA','#EF553B','#00CC96'),marker= list(size= 8)) %>% 
+  
+  add_markers(size = 45)
+
+
+
+fig <- fig %>%
+  
+  layout(
+    
+    title = tit,
+    
+    scene = list(bgcolor = "#e5ecf6")
+    
+  )
+
+fig
+             
